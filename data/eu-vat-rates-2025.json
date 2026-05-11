@@ -1,0 +1,255 @@
+{
+  "metadata": {
+    "source": "European Commission TEDB & sme-vat-rules.ec.europa.eu",
+    "lastUpdated": "2025-01-01",
+    "version": "1.0.0",
+    "notes": "Standard VAT rates and SME thresholds for EU 27 Member States"
+  },
+  "thresholds": {
+    "unionThreshold": 100000,
+    "ossThreshold": 10000,
+    "maxNationalThreshold": 85000
+  },
+  "memberStates": {
+    "AT": {
+      "name": "Austria",
+      "standardRate": 0.20,
+      "reducedRates": [0.13, 0.10],
+      "smeThreshold": 42000,
+      "smeImplemented": true,
+      "currency": "EUR"
+    },
+    "BE": {
+      "name": "Belgium",
+      "standardRate": 0.21,
+      "reducedRates": [0.12, 0.06],
+      "smeThreshold": 25000,
+      "smeImplemented": true,
+      "currency": "EUR"
+    },
+    "BG": {
+      "name": "Bulgaria",
+      "standardRate": 0.20,
+      "reducedRates": [0.09],
+      "smeThreshold": 50000,
+      "smeImplemented": false,
+      "currency": "EUR",
+      "notes": "Joined eurozone January 2026. SME scheme implementation delayed."
+    },
+    "HR": {
+      "name": "Croatia",
+      "standardRate": 0.25,
+      "reducedRates": [0.13, 0.05],
+      "smeThreshold": 50000,
+      "smeImplemented": true,
+      "currency": "EUR"
+    },
+    "CY": {
+      "name": "Cyprus",
+      "standardRate": 0.19,
+      "reducedRates": [0.09, 0.05, 0.03],
+      "smeThreshold": 15600,
+      "smeImplemented": true,
+      "currency": "EUR"
+    },
+    "CZ": {
+      "name": "Czechia",
+      "standardRate": 0.21,
+      "reducedRates": [0.12],
+      "smeThreshold": 80000,
+      "smeImplemented": true,
+      "currency": "CZK",
+      "exchangeRateToEUR": 25.0
+    },
+    "DK": {
+      "name": "Denmark",
+      "standardRate": 0.25,
+      "reducedRates": [],
+      "smeThreshold": 6700,
+      "smeImplemented": false,
+      "currency": "DKK",
+      "exchangeRateToEUR": 7.46,
+      "notes": "No SME scheme for goods"
+    },
+    "EE": {
+      "name": "Estonia",
+      "standardRate": 0.24,
+      "reducedRates": [0.09],
+      "smeThreshold": 40000,
+      "smeImplemented": true,
+      "currency": "EUR",
+      "notes": "Rate increased from 22% in 2024"
+    },
+    "FI": {
+      "name": "Finland",
+      "standardRate": 0.255,
+      "reducedRates": [0.14, 0.10],
+      "smeThreshold": 20000,
+      "smeImplemented": true,
+      "currency": "EUR",
+      "notes": "Rate increased to 25.5% in 2025"
+    },
+    "FR": {
+      "name": "France",
+      "standardRate": 0.20,
+      "reducedRates": [0.10, 0.055, 0.021],
+      "smeThreshold": 85000,
+      "smeImplemented": false,
+      "currency": "EUR",
+      "notes": "Cross-border SME implementation delayed"
+    },
+    "DE": {
+      "name": "Germany",
+      "standardRate": 0.19,
+      "reducedRates": [0.07],
+      "smeThreshold": 25000,
+      "smeImplemented": true,
+      "currency": "EUR",
+      "notes": "Threshold raised from €22,000 in 2025"
+    },
+    "GR": {
+      "name": "Greece",
+      "standardRate": 0.24,
+      "reducedRates": [0.13, 0.06],
+      "smeThreshold": 10000,
+      "smeImplemented": false,
+      "currency": "EUR"
+    },
+    "HU": {
+      "name": "Hungary",
+      "standardRate": 0.27,
+      "reducedRates": [0.18, 0.05],
+      "smeThreshold": 45000,
+      "smeImplemented": true,
+      "currency": "HUF",
+      "exchangeRateToEUR": 400,
+      "notes": "Highest VAT rate in EU"
+    },
+    "IE": {
+      "name": "Ireland",
+      "standardRate": 0.23,
+      "reducedRates": [0.135, 0.09, 0.048],
+      "smeThreshold": 85000,
+      "smeImplemented": true,
+      "currency": "EUR"
+    },
+    "IT": {
+      "name": "Italy",
+      "standardRate": 0.22,
+      "reducedRates": [0.10, 0.05, 0.04],
+      "smeThreshold": 85000,
+      "smeImplemented": true,
+      "currency": "EUR"
+    },
+    "LV": {
+      "name": "Latvia",
+      "standardRate": 0.21,
+      "reducedRates": [0.12, 0.05],
+      "smeThreshold": 50000,
+      "smeImplemented": true,
+      "currency": "EUR"
+    },
+    "LT": {
+      "name": "Lithuania",
+      "standardRate": 0.21,
+      "reducedRates": [0.09, 0.05],
+      "smeThreshold": 55000,
+      "smeImplemented": true,
+      "currency": "EUR"
+    },
+    "LU": {
+      "name": "Luxembourg",
+      "standardRate": 0.17,
+      "reducedRates": [0.14, 0.08, 0.03],
+      "smeThreshold": 50000,
+      "smeImplemented": true,
+      "currency": "EUR",
+      "notes": "Lowest standard VAT rate in EU"
+    },
+    "MT": {
+      "name": "Malta",
+      "standardRate": 0.18,
+      "reducedRates": [0.07, 0.05],
+      "smeThreshold": 35000,
+      "smeImplemented": true,
+      "currency": "EUR"
+    },
+    "NL": {
+      "name": "Netherlands",
+      "standardRate": 0.21,
+      "reducedRates": [0.09],
+      "smeThreshold": 20000,
+      "smeImplemented": true,
+      "currency": "EUR"
+    },
+    "PL": {
+      "name": "Poland",
+      "standardRate": 0.23,
+      "reducedRates": [0.08, 0.05],
+      "smeThreshold": 46500,
+      "smeImplemented": true,
+      "currency": "PLN",
+      "exchangeRateToEUR": 4.3
+    },
+    "PT": {
+      "name": "Portugal",
+      "standardRate": 0.23,
+      "reducedRates": [0.13, 0.06],
+      "smeThreshold": 15000,
+      "smeImplemented": false,
+      "currency": "EUR"
+    },
+    "RO": {
+      "name": "Romania",
+      "standardRate": 0.19,
+      "reducedRates": [0.09, 0.05],
+      "smeThreshold": 17000,
+      "smeImplemented": true,
+      "currency": "RON",
+      "exchangeRateToEUR": 5.0
+    },
+    "SK": {
+      "name": "Slovakia",
+      "standardRate": 0.23,
+      "reducedRates": [0.10],
+      "smeThreshold": 62500,
+      "smeImplemented": true,
+      "currency": "EUR",
+      "notes": "Rate increased from 20% in 2025"
+    },
+    "SI": {
+      "name": "Slovenia",
+      "standardRate": 0.22,
+      "reducedRates": [0.095, 0.05],
+      "smeThreshold": 60000,
+      "smeImplemented": true,
+      "currency": "EUR"
+    },
+    "ES": {
+      "name": "Spain",
+      "standardRate": 0.21,
+      "reducedRates": [0.10, 0.04],
+      "smeThreshold": 0,
+      "smeImplemented": false,
+      "currency": "EUR",
+      "notes": "Mandatory VAT registration for all businesses"
+    },
+    "SE": {
+      "name": "Sweden",
+      "standardRate": 0.25,
+      "reducedRates": [0.12, 0.06],
+      "smeThreshold": 11500,
+      "smeImplemented": true,
+      "currency": "SEK",
+      "exchangeRateToEUR": 10.4
+    }
+  },
+  "legalReferences": {
+    "vatDirective": "Council Directive 2006/112/EC",
+    "smeSchemeReform": "Council Directive (EU) 2020/285",
+    "ossIntroduction": "Council Directive (EU) 2017/2455",
+    "ossThresholdArticle": "Art. 59c",
+    "smeProvisions": "Art. 282-292",
+    "noInputDeduction": "Art. 289"
+  }
+}
