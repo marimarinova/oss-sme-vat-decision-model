@@ -185,4 +185,4 @@ Faculty of Economics and Business Administration, Department of Finance and Acco
 
 ## Acknowledgments
 
-Research conducted as part of PhD dissertation on optimization of accounting processes for cross-border B2C sales under the EU OSS regime. Companion academic paper accepted at the 52nd International Conference on Applications of Mathematics in Engineering and Economics (AMEE 2026), Sozopol, Bulgaria, 6–12 June 2026.
+Research conducted as part of PhD dissertation on optimization of accounting processes for cross-border B2C sales under the EU OSS regime.
