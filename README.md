@@ -132,7 +132,7 @@ See `/tests/validation.test.js` for the complete test suite.
 
 ### Out of Scope
 
-- **Deemed supplier transactions (Art. 14a)** — platform assumes VAT liability
+- **Deemed supplier transactions (Art. 14a):** platform assumes VAT liability
 - IOSS imports ≤€150
 - Non-EU sellers via marketplaces
 - B2B transactions
@@ -143,9 +143,9 @@ See `/tests/validation.test.js` for the complete test suite.
 - Council Directive 2006/112/EC (VAT Directive)
 - Council Directive (EU) 2020/285 (SME Scheme reform)
 - Council Directive (EU) 2017/2455 (OSS introduction)
-- Art. 59c — €10,000 threshold
-- Art. 282-292 — SME provisions
-- Art. 289 — No input VAT deduction under SME
+- Art. 59c: €10,000 threshold
+- Art. 282-292: SME provisions
+- Art. 289: No input VAT deduction under SME
 
 ## Data Sources
 
@@ -174,7 +174,7 @@ Note: After publishing v1.1.0 on Zenodo, replace the DOI above with the new vers
 
 ## License
 
-MIT License — see [LICENSE](https://github.com/marimarinova/oss-sme-vat-decision-model/blob/main/LICENSE) for details.
+MIT License. See [LICENSE](https://github.com/marimarinova/oss-sme-vat-decision-model/blob/main/LICENSE) for details.
 
 ## Author
 
