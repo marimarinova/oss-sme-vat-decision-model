@@ -1,188 +1,171 @@
 # OSS-SME VAT Decision Model
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20117159.svg)](https://doi.org/10.5281/zenodo.20117159)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20204620.svg)](https://doi.org/10.5281/zenodo.20204620)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Release](https://img.shields.io/badge/release-v1.1.0-blue.svg)](https://github.com/marimarinova/oss-sme-vat-decision-model/releases/tag/v1.1.0)
 
-**Mathematical optimization model for VAT regime selection: SME Scheme vs One-Stop Shop for EU micro-enterprises**
+Decision support tool that implements a closed-form mathematical optimization model for the binary SME-versus-OSS regime selection problem faced by EU-established micro-enterprises after the entry into force of Council Directive (EU) 2020/285 on 1 January 2025.
 
 ## Overview
 
-This decision support tool helps EU-based micro-enterprises determine the optimal VAT regime when conducting cross-border B2C sales. Following the implementation of Directive (EU) 2020/285 (effective January 2025), businesses can now apply the SME VAT exemption scheme across EU borders, creating a non-trivial optimization problem.
+The tool computes:
 
-### The Decision Problem
+- regime-specific compliance cost functions $C_{SME}(I)$ and $C_{OSS}(I)$
+- the closed-form break-even threshold $I^{*}$
+- the optimal regime $R^{*} \in \{SME, OSS\}$ given operating parameters
+- the time-to-threshold $t^{*}$ under an auxiliary growth model
 
-| Regime | VAT Collection | Input VAT Recovery | Compliance Cost |
-| --- | --- | --- | --- |
-| **SME Scheme** | Exempt (in eligible MS) | ❌ Not deductible (Art. 289) | Lower (~€200/year) |
-| **OSS Union** | Destination rates | ✅ Fully deductible | Higher (~€500/year) |
+## Scope of Applicability
 
-**When is SME better?** Low business expenses → minimal input VAT to recover
-**When is OSS better?** High material/shipping costs → significant input VAT recovery
+This tool applies to EU-established micro-enterprises engaged in cross-border B2C sales of physical or digital goods. Specifically, the implementation assumes the operating context where:
+
+- the enterprise is established in a single Member State
+- inventory is maintained in at most one Member State for cross-border operations
+- sales are not routed through electronic interfaces acting as deemed suppliers under Article 9a of Council Implementing Regulation (EU) 282/2011
+
+The following configurations fall outside the scope of this tool and require independent VAT analysis beyond the binary SME-OSS choice modelled here:
+
+| Configuration | Why excluded |
+|---|---|
+| Amazon Pan-EU FBA / multi-Member-State inventory storage | Each intra-EU transfer of own goods triggers an intra-community acquisition that requires local VAT registration regardless of SME status (EC Explanatory Notes, October 2024, Section 6.1) |
+| Non-EU-established sellers using EU electronic interfaces | Article 14a(2) of Directive 2006/112/EC renders the platform the deemed supplier |
+| Electronically supplied services through platform marketplaces (Etsy digital downloads, App Store, Steam, Google Play) | Article 9a of Implementing Regulation 282/2011 transfers VAT liability to the platform; CJEU confirmed in *Fenix International* (C-695/20, 28 February 2023) |
+| Micro-enterprises with EU-wide turnover below €10,000 | Article 59c micro-business derogation applies; origin-Member-State VAT rate is used |
+
+The Transfer of Own Goods (TOOG) scheme under Council Directive (EU) 2025/516 (ViDA package), effective 1 July 2028, addresses the multi-local inventory case for non-exempt taxable persons. TOOG does not extend to SME-exempt suppliers due to the input VAT deduction prerequisite. Extension of this tool to TOOG-eligible scenarios is reserved for future development.
 
 ## Mathematical Model
 
-### Cost Functions
+The model formalises the choice between the SME exemption scheme under Council Directive (EU) 2020/285 and the OSS Union scheme under Council Directives (EU) 2017/2455 and 2019/1995.
 
-The total annual cost under each regime:
+### Cost functions
+
+Under the SME exemption, input VAT becomes a sunk cost per Article 289 of Council Directive 2006/112/EC (as amended):
 
 $$C_{SME}(I) = V_{SME} + \kappa_{SME} + I$$
 
+Under the OSS Union scheme, input VAT offsets output VAT liability:
+
 $$C_{OSS}(I) = \max(0, V_{OSS} - I) + \kappa_{OSS}$$
 
-Where:
+### Break-even threshold
 
-- $V_{OSS}$ = gross destination output VAT liability under the OSS regime before input recovery
-- $V_{SME}$ = opportunity cost of absorbed destination VAT under the SME exemption (under full-absorption assumption $p = 0$; not a legal VAT charge, which is zero per Art. 289 of Directive 2006/112/EC, but the margin reduction required to match the prices of OSS-registered competitors who embed destination VAT in their consumer prices)
-- $\kappa_R$ = annual compliance cost under regime $R$
-- $I$ = annual input VAT (deductible only under OSS)
+Setting $C_{SME}(I) = C_{OSS}(I)$ and solving for $I$ yields the closed-form break-even threshold:
 
-### Break-even Theorem
+$$I^{*} = \frac{V_{OSS} - V_{SME} + \kappa_{OSS} - \kappa_{SME}}{2}$$
 
-The break-even input VAT $I^*$ where both regimes yield equal costs:
+The factor of 2 reflects the asymmetric incidence of input VAT under the two regimes: $I$ is a sunk cost under SME and a recoverable credit under OSS.
 
-$$I^* = \frac{V_{OSS} - V_{SME} + \kappa_{OSS} - \kappa_{SME}}{2}$$
+### Decision rule
 
-**Decision Rule:**
+$$R^{*} = \begin{cases} SME & \text{if } I < I^{*} \\ OSS & \text{if } I \geq I^{*} \end{cases}$$
 
-- If $I < I^*$ → Choose **SME Scheme**
-- If $I \geq I^*$ → Choose **OSS**
+### Feasibility constraint
 
-The factor of 2 arises from the asymmetric incidence of input VAT across regimes: $I$ is a sunk cost under SME (non-deductible per Art. 289) and offsets output VAT under OSS.
+The SME exemption is available only when Union-wide turnover $T$ does not exceed $\theta = €100{,}000$.
 
-### Threshold Forecasting
+### Auxiliary growth model
 
-Time to exceed Union threshold (€100,000) with constant annual growth rate $g$:
+For an enterprise with initial turnover $T_0$ and constant annual growth rate $g$, the time to cross the Union threshold is:
 
-$$t^* = \frac{\log(\theta_U / T_0)}{\log(1 + g)}$$
+$$t^{*} = \frac{\log(\theta / T_0)}{\log(1 + g)}$$
 
-## Features
+## Repository Structure
 
-- ✅ All 27 EU Member States with current VAT rates (January 2025)
-- ✅ SME national thresholds and implementation status
-- ✅ Break-even analysis with closed-form solution
-- ✅ Growth forecasting with threshold crossing prediction
-- ✅ Multi-country turnover distribution support
-- ✅ Sensitivity analysis around break-even point
+```
+oss-sme-vat-decision-model/
+├── README.md                       # this file
+├── LICENSE                         # MIT
+├── src/
+│   ├── model.js                    # calculator logic
+│   └── calculator.jsx              # React UI component
+├── data/
+│   └── eu-vat-rates-2025.json      # VAT rates for 27 EU Member States
+└── tests/
+    └── validation.test.js          # 15-test validation suite
+```
 
 ## Installation
 
-### Option 1: Use the JavaScript Module
-
-```
+```bash
+git clone https://github.com/marimarinova/oss-sme-vat-decision-model.git
+cd oss-sme-vat-decision-model
 npm install
-node src/model.js
 ```
 
-### Option 2: React Component
+## Usage
 
-```
-import SMEOSSModel from './src/calculator.jsx';
+```javascript
+import { computeOptimalRegime } from './src/model.js';
 
-function App() {
-  return <SMEOSSModel />;
-}
-```
+const result = computeOptimalRegime({
+  T: 25300,        // Union-wide turnover in EUR
+  I: 350,          // annual input VAT in EUR
+  V_SME: 1000,     // opportunity cost of absorbed destination VAT
+  V_OSS: 4172,     // gross destination output VAT liability
+  kappa_SME: 200,  // SME compliance cost
+  kappa_OSS: 500   // OSS compliance cost
+});
 
-## Usage Example
-
-```
-const { calculateRegimeCosts, calculateBreakeven } = require('./src/model.js');
-
-// Example: Bulgarian seller with cross-border sales
-const turnover = {
-  DE: 15000,  // Germany
-  FR: 8000,   // France
-  IT: 5000    // Italy
-};
-
-const inputVAT = 2000;  // Annual deductible expenses
-const msEstablishment = 'BG';
-
-const result = calculateRegimeCosts(turnover, msEstablishment, inputVAT);
-const breakeven = calculateBreakeven(result.V_SME, result.V_OSS);
-
-console.log(`Optimal regime: ${result.optimalRegime}`);
-console.log(`Annual savings: €${result.savings.toFixed(2)}`);
-console.log(`Break-even point: €${breakeven.I_star.toFixed(2)}`);
+console.log(result);
+// { regime: 'SME', I_star: 1736, delta_C: 2771 }
 ```
 
 ## Validation
 
-The model has been validated with a 15-test suite covering edge cases (5 tests), parametric scenarios (5 tests), four representative profiles (4 tests), and reproducibility (1 cross-check against the closed-form formula). All 15 tests passed at numerical tolerance $\epsilon \leq €1$.
+The repository includes a 15-test validation suite covering edge cases, parametric sensitivity, four representative micro-enterprise profiles, and reproducibility of the closed-form break-even formula. All tests pass at numerical tolerance $\varepsilon \leq €1$.
 
-| Profile | Turnover ($T$) | Input VAT ($I$) | $I^*$ | Optimal | Annual savings ($\Delta C$) |
-| --- | --- | --- | --- | --- | --- |
-| A. Low-$I$, single-category digital | €25,300 | €350 | €1,736 | SME | €2,771 |
-| B. High-$I$, physical goods | €50,000 | €9,500 | €3,900 | OSS | €11,200 |
-| C. Mid-$I$, digital services near $\theta$ | €98,000 | €2,500 | €3,362 | SME | €1,724 |
-| D. Mid-$I$, diversified geographic | €80,000 | €3,000 | €1,052 | OSS | €3,897 |
+```bash
+npm test
+```
 
-The four canonical profiles span the parameter space of typical cross-border EU operations and are used in the companion academic paper to test propositions P1 (low-$I$ favours SME) and P2 (high-$I$ favours OSS).
+## Representative Profiles
 
-See `/tests/validation.test.js` for the complete test suite.
+The validation suite includes four canonical EU micro-enterprise profiles:
 
-## Scope & Limitations
-
-### In Scope
-
-- EU-established taxable persons
-- B2C cross-border sales
-- Physical goods and TBE services
-- Mixed business models (platform + own shop)
-- Full-absorption assumption ($p = 0$): firm absorbs destination VAT from margin rather than passing through to consumers
-
-### Out of Scope
-
-- **Deemed supplier transactions (Art. 14a):** platform assumes VAT liability
-- IOSS imports ≤€150
-- Non-EU sellers via marketplaces
-- B2B transactions
-- Partial pass-through ($p > 0$): acknowledged as a generalisation (Model B) for future research
-
-## Legal Framework
-
-- Council Directive 2006/112/EC (VAT Directive)
-- Council Directive (EU) 2020/285 (SME Scheme reform)
-- Council Directive (EU) 2017/2455 (OSS introduction)
-- Art. 59c: €10,000 threshold
-- Art. 282-292: SME provisions
-- Art. 289: No input VAT deduction under SME
-
-## Data Sources
-
-- VAT rates: [EC TEDB](https://ec.europa.eu/taxation_customs/tedb/)
-- SME thresholds: [sme-vat-rules.ec.europa.eu](https://sme-vat-rules.ec.europa.eu/)
-- EC Explanatory Notes on SME Scheme (24 October 2024)
+| Profile | T (EUR) | I (EUR) | $I^{*}$ (EUR) | $R^{*}$ | $\Delta C$ (EUR) |
+|---|---|---|---|---|---|
+| A. Low-I, single-category digital | 25,300 | 350 | 1,736 | SME | 2,771 |
+| B. High-I, physical goods | 50,000 | 9,500 | 3,900 | OSS | 11,200 |
+| C. Mid-I, digital services near $\theta$ | 98,000 | 2,500 | 3,362 | SME | 1,724 |
+| D. Mid-I, diversified geographic | 80,000 | 3,000 | 1,052 | OSS | 3,897 |
 
 ## Citation
 
-If you use this tool in academic research, please cite:
+If you use this tool, please cite the software via its Zenodo DOI:
 
-```
-@software{marinova2026ossmodel,
+```bibtex
+@software{marinova2026code,
   author    = {Marinova, Marieta},
-  title     = {OSS-SME VAT Decision Model: Mathematical Optimization
-               for EU Micro-Enterprise VAT Regime Selection},
+  title     = {{OSS-SME VAT Decision Model}},
+  version   = {v1.1.0},
   year      = {2026},
-  publisher = {Zenodo},
-  version   = {1.1.0},
-  doi       = {10.5281/zenodo.20117159},
+  doi       = {10.5281/zenodo.20204620},
   url       = {https://github.com/marimarinova/oss-sme-vat-decision-model}
 }
 ```
 
-Note: After publishing v1.1.0 on Zenodo, replace the DOI above with the new version-specific DOI provided by Zenodo. The DOI shown at the top of this README is the concept DOI; the version-specific DOI of v1.0.0 was the first release.
+## Legal References
+
+- Council Directive 2006/112/EC of 28 November 2006 on the common system of value added tax - [EUR-Lex](https://eur-lex.europa.eu/eli/dir/2006/112/oj)
+- Council Directive (EU) 2017/2455 of 5 December 2017 - [EUR-Lex](https://eur-lex.europa.eu/eli/dir/2017/2455/oj)
+- Council Directive (EU) 2019/1995 of 21 November 2019 - [EUR-Lex](https://eur-lex.europa.eu/eli/dir/2019/1995/oj)
+- Council Directive (EU) 2020/285 of 18 February 2020 (SME scheme) - [EUR-Lex](https://eur-lex.europa.eu/eli/dir/2020/285/oj)
+- Council Directive (EU) 2025/516 of 11 March 2025 (ViDA package) - [EUR-Lex](https://eur-lex.europa.eu/eli/dir/2025/516/oj)
+- Council Implementing Regulation (EU) No 282/2011 - [EUR-Lex](https://eur-lex.europa.eu/eli/reg_impl/2011/282/oj)
+- EC Explanatory Notes on the SME scheme (DG TAXUD, October 2024) - [EC SME portal](https://sme-vat-rules.ec.europa.eu/system/files/2024-10/sme-explanatory-notes_en.pdf)
+- CJEU, *Fenix International* (Case C-695/20, 28 February 2023)
+- Bulgaria transposition: ZID ZDDS, State Gazette No. 115 of 30 December 2025, in force from 1 January 2026
 
 ## License
 
-MIT License. See [LICENSE](https://github.com/marimarinova/oss-sme-vat-decision-model/blob/main/LICENSE) for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Author
 
 **Marieta Marinova**
-ORCID: 0009-0006-9145-4199
-PhD Candidate, Sofia University "St. Kliment Ohridski"
-Faculty of Economics and Business Administration, Department of Finance and Accounting
-
-## Acknowledgments
-
-Research conducted as part of PhD dissertation on optimization of accounting processes for cross-border B2C sales under the EU OSS regime.
+PhD candidate, Faculty of Economics and Business Administration
+Department of Finance and Accounting
+Sofia University "St. Kliment Ohridski", Sofia, Bulgaria
+ORCID: [0009-0006-9145-4199](https://orcid.org/0009-0006-9145-4199)
+Email: marietaim@uni-sofia.bg
