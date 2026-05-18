@@ -11,9 +11,9 @@ Decision support tool that implements a closed-form mathematical optimization mo
 The tool computes:
 
 - regime-specific compliance cost functions $C_{SME}(I)$ and $C_{OSS}(I)$
-- the closed-form break-even threshold $I^{*}$
-- the optimal regime $R^{*} \in \{SME, OSS\}$ given operating parameters
-- the time-to-threshold $t^{*}$ under an auxiliary growth model
+- the closed-form break-even threshold $I^{\ast}$
+- the optimal regime $R^{\ast} \in \{SME, OSS\}$ given operating parameters
+- the time-to-threshold $t^{\ast}$ under an auxiliary growth model
 
 ## Scope of Applicability
 
@@ -52,13 +52,17 @@ $$C_{OSS}(I) = \max(0, V_{OSS} - I) + \kappa_{OSS}$$
 
 Setting $C_{SME}(I) = C_{OSS}(I)$ and solving for $I$ yields the closed-form break-even threshold:
 
-$$I^{*} = \frac{V_{OSS} - V_{SME} + \kappa_{OSS} - \kappa_{SME}}{2}$$
+$$I^{\ast} = \frac{V_{OSS} - V_{SME} + \kappa_{OSS} - \kappa_{SME}}{2}$$
 
 The factor of 2 reflects the asymmetric incidence of input VAT under the two regimes: $I$ is a sunk cost under SME and a recoverable credit under OSS.
 
 ### Decision rule
 
-$$R^{*} = \begin{cases} SME & \text{if } I < I^{*} \\ OSS & \text{if } I \geq I^{*} \end{cases}$$
+The optimal regime is determined by comparing the actual input VAT to the break-even threshold:
+
+$$R^{\ast} = \text{SME} \quad \text{when} \quad I < I^{\ast}$$
+
+$$R^{\ast} = \text{OSS} \quad \text{when} \quad I \geq I^{\ast}$$
 
 ### Feasibility constraint
 
@@ -68,7 +72,7 @@ The SME exemption is available only when Union-wide turnover $T$ does not exceed
 
 For an enterprise with initial turnover $T_0$ and constant annual growth rate $g$, the time to cross the Union threshold is:
 
-$$t^{*} = \frac{\log(\theta / T_0)}{\log(1 + g)}$$
+$$t^{\ast} = \frac{\log(\theta / T_0)}{\log(1 + g)}$$
 
 ## Repository Structure
 
@@ -123,7 +127,7 @@ npm test
 
 The validation suite includes four canonical EU micro-enterprise profiles:
 
-| Profile | T (EUR) | I (EUR) | $I^{*}$ (EUR) | $R^{*}$ | $\Delta C$ (EUR) |
+| Profile | T (EUR) | I (EUR) | $I^{\ast}$ (EUR) | $R^{\ast}$ | $\Delta C$ (EUR) |
 |---|---|---|---|---|---|
 | A. Low-I, single-category digital | 25,300 | 350 | 1,736 | SME | 2,771 |
 | B. High-I, physical goods | 50,000 | 9,500 | 3,900 | OSS | 11,200 |
