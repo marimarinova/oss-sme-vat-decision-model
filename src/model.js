@@ -6,7 +6,7 @@
  * 
  * @author Marieta Marinova
  * @institution Sofia University "St. Kliment Ohridski"
- * @version 1.0.0
+ * @version 1.2.1
  * @license MIT
  * 
  * Legal Framework:
@@ -59,7 +59,7 @@ const EU_MEMBER_STATES = {
   DK: { name: 'Denmark', rate: 0.25, threshold: 6700, implemented: false },
   EE: { name: 'Estonia', rate: 0.24, threshold: 40000, implemented: true },
   FI: { name: 'Finland', rate: 0.255, threshold: 20000, implemented: true },
-  FR: { name: 'France', rate: 0.20, threshold: 85000, implemented: false },
+  FR: { name: 'France', rate: 0.20, threshold: 85000, implemented: true },
   DE: { name: 'Germany', rate: 0.19, threshold: 25000, implemented: true },
   GR: { name: 'Greece', rate: 0.24, threshold: 10000, implemented: false },
   HU: { name: 'Hungary', rate: 0.27, threshold: 45000, implemented: true },
@@ -124,7 +124,7 @@ function checkSMEEligibility(turnover, msData, totalTurnover) {
  * 
  * Cost Functions:
  *   C_SME = V_SME + κ_SME + I  (input VAT lost - cannot deduct per Art. 289)
- *   C_OSS = max(0, V_OSS - I) + κ_OSS  (input VAT recovered)
+ *   C_OSS = V_OSS - I + κ_OSS  (input VAT fully recovered; may be negative = net refund)
  * 
  * @param {object} turnoverByMS - Object with MS codes as keys and turnover as values
  * @param {string} msEstablishment - MS code where business is established
@@ -180,8 +180,9 @@ function calculateRegimeCosts(turnoverByMS, msEstablishment, inputVAT) {
   // C_SME = V_SME + κ_SME + I (input VAT is lost under SME)
   const costSME = vatSME + COMPLIANCE_COSTS.SME + inputVAT;
   
-  // C_OSS = max(0, V_OSS - I) + κ_OSS (input VAT is recovered)
-  const costOSS = Math.max(0, vatOSS - inputVAT) + COMPLIANCE_COSTS.OSS;
+  // C_OSS = V_OSS - I + κ_OSS (input VAT fully recovered via domestic VAT-return/refund;
+  // may be negative, denoting a net VAT-refund position after the modeled compliance cost)
+  const costOSS = vatOSS - inputVAT + COMPLIANCE_COSTS.OSS;
   
   // Determine eligibility
   const smeEligible = totalTurnover <= UNION_THRESHOLD;
@@ -240,7 +241,10 @@ function calculateBreakeven(vatSME, vatOSS) {
   const breakeven = (vatOSS - vatSME + kappaDiff) / 2;
   
   return {
-    breakeven: Math.max(0, breakeven),
+    // Closed-form threshold, unclipped (may be negative for some parameter sets)
+    breakeven,
+    // Business-facing clipped value for display only
+    breakevenDisplay: Math.max(0, breakeven),
     
     // Interpretation
     interpretation: breakeven < 0 
