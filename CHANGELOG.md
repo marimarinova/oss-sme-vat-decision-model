@@ -32,8 +32,8 @@
 ### Documentation
 - Rewrote README to describe the linear model.
 - Corrected Profile B break-even threshold in README from an erroneous 3,900 to
-  the code-derived 3,339.
-- Corrected Profile B annual cost difference from 11,200 to 12,321.
+  the code-derived value (3,339 in v1.2.0; 4,339 after the France correction in v1.2.1).
+- Corrected Profile B annual cost difference from 11,200 to 12,321 (v1.2.0); further updated to 10,321 after the France correction (v1.2.1).
 - Added the full-deductibility assumption and the refund-route note.
 - Recalculated and published the audit table for Profiles A-D from unrounded inputs.
 
