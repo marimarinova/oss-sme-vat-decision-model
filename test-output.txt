@@ -1,0 +1,126 @@
+=== VALIDATION SUITE OUTPUT (v1.2.1) ===
+Release: v1.2.1
+Change from v1.2.0: France corrected to implemented:true (BOFiP ACTU-2025-00144)
+OSS cost: linear form V_OSS - I + kappa_OSS (max operator removed)
+Node: v22.22.2
+Date: 2026-09-06T06:01:49Z
+
+
+═══════════════════════════════════════════════════════════════════════════
+  SIMULATED TEST CASES
+═══════════════════════════════════════════════════════════════════════════
+
+┌─ TEST: 1. Micro Digital Seller (PDF patterns, low expenses)
+├──────────────────────────────────────────────────────────────────────
+│ Turnover: €28000, Input VAT: €500
+│ C_SME: €700.00, C_OSS: €4629.93
+│ Optimal: SME
+└─ ✅ PASSED: SME optimal for low-expense digital seller (saves €3930/year)
+
+┌─ TEST: 2. Physical Goods Seller (handmade jewelry, high expenses)
+├──────────────────────────────────────────────────────────────────────
+│ Turnover: €50000, Input VAT: €12000
+│ Break-even I*: €4263.57
+│ I=12000 > I*
+└─ ✅ PASSED: High input VAT (€12000) exceeds break-even → OSS optimal
+
+┌─ TEST: 3. Growing Business Exceeds €100K Union Threshold
+├──────────────────────────────────────────────────────────────────────
+│ Total: €105000 (> €100K threshold)
+│ SME Eligible: No
+└─ ✅ PASSED: T > €100K → SME ineligible → OSS is only option
+
+┌─ TEST: 4. Exceeds National Threshold (DE €25K)
+├──────────────────────────────────────────────────────────────────────
+│ DE: €30K (threshold €25K) → VAT collected
+│ IT: €10K (threshold €85K) → exempt
+└─ ✅ PASSED: DE exceeds national threshold → partial SME eligibility
+
+┌─ TEST: 5. Break-even Mathematical Validation
+├──────────────────────────────────────────────────────────────────────
+│ I* = €3966.87
+│ At I*: C_SME = €4166.87, C_OSS = €4166.87
+│ Difference: €0.00
+└─ ✅ PASSED: Break-even verified: SME < I* < OSS, diff at I* = €0.00
+
+┌─ TEST: 6. Sales Only in Non-Implemented MS (DK, GR, PT)
+├──────────────────────────────────────────────────────────────────────
+│ All MS: non-implemented (DK, GR, PT)
+│ V_SME = €5857.33, V_OSS = €5857.33
+└─ ✅ PASSED: No SME exemptions available → V_SME = V_OSS
+
+┌─ TEST: 7. Edge Case: Exactly at €100K Union Threshold
+├──────────────────────────────────────────────────────────────────────
+│ T = €100000 (exactly €100K)
+│ SME Eligible: Yes (≤)
+└─ ✅ PASSED: T = €100K: boundary condition (≤) → SME eligible
+
+┌─ TEST: 8. Zero Input VAT (pure digital, no expenses)
+├──────────────────────────────────────────────────────────────────────
+│ Input VAT: €0
+│ C_SME: €200.00, C_OSS: €6398.20
+└─ ✅ PASSED: I = 0 → SME optimal (no OSS deduction benefit)
+
+┌─ TEST: 9. VAT Calculation Accuracy (DE 19%)
+├──────────────────────────────────────────────────────────────────────
+│ Gross: €11900, Rate: 19%
+│ VAT: €1900.00 (expected: €1900)
+└─ ✅ PASSED: VAT(€11900, 19%) = €1900.00 ✓
+
+┌─ TEST: 10. Hungary Highest VAT Rate (27%)
+├──────────────────────────────────────────────────────────────────────
+│ HU Gross: €12700, Rate: 27%
+│ VAT: €2700.00 (expected: €2700)
+└─ ✅ PASSED: HU 27% VAT calculated correctly
+
+┌─ TEST: 10b. Net-refund case (I > V_OSS): replaces former input-heavy branch test
+├──────────────────────────────────────────────────────────────────────
+│ V_OSS = €8378.56, I = €9500
+│ C_OSS = €-621.44 (linear form, no max operator)
+└─ ✅ PASSED: I > V_OSS -> C_OSS = €-621.44 < kappa_OSS, net-refund position, OSS optimal
+
+═══════════════════════════════════════════════════════════════════════════
+  ILLUSTRATIVE E-COMMERCE SCENARIOS
+═══════════════════════════════════════════════════════════════════════════
+
+┌─ TEST: Scenario A: Etsy Digital Pattern Seller
+├──────────────────────────────────────────────────────────────────────
+│ Profile: Digital patterns, low expenses
+│ Total: €25300, Input VAT: €350
+│ Optimal: SME, Savings: €3471/year
+└─ ✅ PASSED: Digital seller → SME optimal (saves €3471/year)
+
+┌─ TEST: Scenario B: Handmade Jewelry Seller
+├──────────────────────────────────────────────────────────────────────
+│ Profile: Silver/gemstones, high material costs
+│ Total: €50000, Input VAT: €9500
+│ Break-even: €4339, I > I* → OSS
+└─ ✅ PASSED: High expenses → OSS optimal (saves €10321/year)
+
+┌─ TEST: Scenario C: Online Course Creator (near €100K)
+├──────────────────────────────────────────────────────────────────────
+│ Profile: Online courses, approaching threshold
+│ Total: €98000 (€2000 to threshold)
+│ At 20% growth: exceeds €100K in 0.11 years
+└─ ✅ PASSED: Near threshold → SME now, but prepare for OSS transition
+
+┌─ TEST: Scenario D: Multi-country Exceeds National Thresholds
+├──────────────────────────────────────────────────────────────────────
+│ DE: €30K > €25K threshold → ✗
+│ NL: €25K > €20K threshold → ✗
+│ SE: €15K > €11.5K threshold → ✗
+│ IT: €10K < €85K threshold → ✓
+└─ ✅ PASSED: Multiple national thresholds exceeded → partial SME, OSS optimal
+
+┌─ TEST: Scenario E: Sensitivity Analysis at Break-even
+├──────────────────────────────────────────────────────────────────────
+│ I* = €3096
+│ At I*-500: SME, At I*: diff=0, At I*+500: OSS
+└─ ✅ PASSED: €500 change around I* flips optimal regime
+
+═══════════════════════════════════════════════════════════════════════════
+  TEST SUMMARY: 16 passed, 0 failed
+═══════════════════════════════════════════════════════════════════════════
+
+✅ All 16 validation tests passed (formulas, boundaries, illustrative scenarios). Tests verify implementation, not legal validity.
+
