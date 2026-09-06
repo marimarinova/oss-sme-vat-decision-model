@@ -5,7 +5,7 @@
  * 
  * This test suite validates the mathematical model with:
  * - 10 simulated test cases (edge cases, boundary conditions)
- * - 5 real-world scenarios from e-commerce sector
+ * - 5 illustrative e-commerce scenarios
  * 
  * Run: node tests/validation.test.js
  */
@@ -144,13 +144,13 @@ test('5. Break-even Mathematical Validation', () => {
   };
 });
 
-test('6. Sales Only in Non-Implemented MS (FR, ES, GR)', () => {
-  const turnover = { FR: 15000, ES: 10000, GR: 8000 };
+test('6. Sales Only in Non-Implemented MS (DK, GR, PT)', () => {
+  const turnover = { DK: 15000, GR: 8000, PT: 7000 };
   const result = calculateRegimeCosts(turnover, 'BG', 1000);
   
   const vatDiff = Math.abs(result.vatSME - result.vatOSS);
   
-  console.log(`│ All MS: non-implemented (FR, ES, GR)`);
+  console.log(`│ All MS: non-implemented (DK, GR, PT)`);
   console.log(`│ V_SME = €${result.vatSME.toFixed(2)}, V_OSS = €${result.vatOSS.toFixed(2)}`);
   
   // Expected: V_SME = V_OSS (no exemptions available)
@@ -218,12 +218,30 @@ test('10. Hungary Highest VAT Rate (27%)', () => {
   };
 });
 
+test('10b. Net-refund case (I > V_OSS): replaces former input-heavy branch test', () => {
+  // Profile B configuration: high input VAT exceeds destination output VAT
+  const turnover = { DE: 18000, FR: 12000, IT: 8000, NL: 5000, BE: 4000, AT: 3000 };
+  const inputVAT = 9500;
+  const result = calculateRegimeCosts(turnover, 'BG', inputVAT);
+
+  console.log(`│ V_OSS = €${result.vatOSS.toFixed(2)}, I = €${inputVAT}`);
+  console.log(`│ C_OSS = €${result.costOSS.toFixed(2)} (linear form, no max operator)`);
+
+  // Under the linear model C_OSS = V_OSS - I + kappa_OSS may be below kappa_OSS (net refund)
+  const netRefund = inputVAT > result.vatOSS;
+  const belowKappa = result.costOSS < 500;
+  return {
+    success: netRefund && belowKappa && result.optimalRegime === 'OSS',
+    message: `I > V_OSS -> C_OSS = €${result.costOSS.toFixed(2)} < kappa_OSS, net-refund position, OSS optimal`
+  };
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
-// TEST GROUP 2: REAL-WORLD SCENARIOS
+// TEST GROUP 2: ILLUSTRATIVE E-COMMERCE SCENARIOS
 // ═══════════════════════════════════════════════════════════════════════════════
 
 console.log('\n' + '═'.repeat(75));
-console.log('  REAL-WORLD SCENARIOS (E-COMMERCE)');
+console.log('  ILLUSTRATIVE E-COMMERCE SCENARIOS');
 console.log('═'.repeat(75));
 
 test('Scenario A: Etsy Digital Pattern Seller', () => {
@@ -323,7 +341,7 @@ console.log(`  TEST SUMMARY: ${passed} passed, ${failed} failed`);
 console.log('═'.repeat(75));
 
 if (failed === 0) {
-  console.log('\n🎉 ALL TESTS PASSED - Model is mathematically validated!\n');
+  console.log('\n✅ All 16 validation tests passed (formulas, boundaries, illustrative scenarios). Tests verify implementation, not legal validity.\n');
   process.exit(0);
 } else {
   console.log(`\n⚠️ ${failed} test(s) need attention\n`);
