@@ -1,6 +1,6 @@
 # OSS-SME VAT Decision Model
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20204620.svg)](https://doi.org/10.5281/zenodo.20204620)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22485967.svg)](https://doi.org/10.5281/zenodo.22485967)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Release](https://img.shields.io/badge/release-v1.2.1-blue.svg)](https://github.com/marimarinova/oss-sme-vat-decision-model/releases/tag/v1.2.1)
 
@@ -148,7 +148,7 @@ For Profile B, input VAT exceeds destination output VAT, so $C_{OSS}$ is negativ
   title     = {{OSS-SME VAT Decision Model}},
   version   = {v1.2.1},
   year      = {2026},
-  doi       = {10.5281/zenodo.20204620},
+  doi       = {10.5281/zenodo.22485967},
   url       = {https://github.com/marimarinova/oss-sme-vat-decision-model}
 }
 ```
