@@ -1,10 +1,3 @@
-=== VALIDATION SUITE OUTPUT (v1.2.1) ===
-Release: v1.2.1
-Change from v1.2.0: France corrected to implemented:true (BOFiP ACTU-2025-00144)
-OSS cost: linear form V_OSS - I + kappa_OSS (max operator removed)
-Node: v22.22.2
-Date: 2026-09-06T06:01:49Z
-
 
 ═══════════════════════════════════════════════════════════════════════════
   SIMULATED TEST CASES
@@ -13,14 +6,14 @@ Date: 2026-09-06T06:01:49Z
 ┌─ TEST: 1. Micro Digital Seller (PDF patterns, low expenses)
 ├──────────────────────────────────────────────────────────────────────
 │ Turnover: €28000, Input VAT: €500
-│ C_SME: €700.00, C_OSS: €4629.93
+│ C_SME: €700.00, C_OSS: €5129.93
 │ Optimal: SME
-└─ ✅ PASSED: SME optimal for low-expense digital seller (saves €3930/year)
+└─ ✅ PASSED: SME optimal for low-expense digital seller (saves €4430/year)
 
 ┌─ TEST: 2. Physical Goods Seller (handmade jewelry, high expenses)
 ├──────────────────────────────────────────────────────────────────────
 │ Turnover: €50000, Input VAT: €12000
-│ Break-even I*: €4263.57
+│ Break-even I*: €8527.13
 │ I=12000 > I*
 └─ ✅ PASSED: High input VAT (€12000) exceeds break-even → OSS optimal
 
@@ -38,8 +31,8 @@ Date: 2026-09-06T06:01:49Z
 
 ┌─ TEST: 5. Break-even Mathematical Validation
 ├──────────────────────────────────────────────────────────────────────
-│ I* = €3966.87
-│ At I*: C_SME = €4166.87, C_OSS = €4166.87
+│ I* = €7933.73
+│ At I*: C_SME = €8133.73, C_OSS = €8133.73
 │ Difference: €0.00
 └─ ✅ PASSED: Break-even verified: SME < I* < OSS, diff at I* = €0.00
 
@@ -73,11 +66,11 @@ Date: 2026-09-06T06:01:49Z
 │ VAT: €2700.00 (expected: €2700)
 └─ ✅ PASSED: HU 27% VAT calculated correctly
 
-┌─ TEST: 10b. Net-refund case (I > V_OSS): replaces former input-heavy branch test
+┌─ TEST: 10b. Cash-flow refund position is separate from economic cost (I > V_OSS)
 ├──────────────────────────────────────────────────────────────────────
 │ V_OSS = €8378.56, I = €9500
-│ C_OSS = €-621.44 (linear form, no max operator)
-└─ ✅ PASSED: I > V_OSS -> C_OSS = €-621.44 < kappa_OSS, net-refund position, OSS optimal
+│ Refund position = €1121.44, C_OSS = €8878.56
+└─ ✅ PASSED: Refund €1121 reported separately; C_OSS independent of I and non-negative
 
 ═══════════════════════════════════════════════════════════════════════════
   ILLUSTRATIVE E-COMMERCE SCENARIOS
@@ -87,15 +80,15 @@ Date: 2026-09-06T06:01:49Z
 ├──────────────────────────────────────────────────────────────────────
 │ Profile: Digital patterns, low expenses
 │ Total: €25300, Input VAT: €350
-│ Optimal: SME, Savings: €3471/year
-└─ ✅ PASSED: Digital seller → SME optimal (saves €3471/year)
+│ Optimal: SME, Savings: €3821/year
+└─ ✅ PASSED: Digital seller → SME optimal (saves €3821/year)
 
 ┌─ TEST: Scenario B: Handmade Jewelry Seller
 ├──────────────────────────────────────────────────────────────────────
 │ Profile: Silver/gemstones, high material costs
 │ Total: €50000, Input VAT: €9500
-│ Break-even: €4339, I > I* → OSS
-└─ ✅ PASSED: High expenses → OSS optimal (saves €10321/year)
+│ Break-even: €8679, I > I* → OSS
+└─ ✅ PASSED: High expenses → OSS optimal (saves €821/year)
 
 ┌─ TEST: Scenario C: Online Course Creator (near €100K)
 ├──────────────────────────────────────────────────────────────────────
@@ -114,13 +107,40 @@ Date: 2026-09-06T06:01:49Z
 
 ┌─ TEST: Scenario E: Sensitivity Analysis at Break-even
 ├──────────────────────────────────────────────────────────────────────
-│ I* = €3096
+│ I* = €6192
 │ At I*-500: SME, At I*: diff=0, At I*+500: OSS
 └─ ✅ PASSED: €500 change around I* flips optimal regime
 
 ═══════════════════════════════════════════════════════════════════════════
-  TEST SUMMARY: 16 passed, 0 failed
+  ECONOMIC CONSISTENCY TESTS (hand-computed expectations)
 ═══════════════════════════════════════════════════════════════════════════
 
-✅ All 16 validation tests passed (formulas, boundaries, illustrative scenarios). Tests verify implementation, not legal validity.
+┌─ TEST: S1. Input VAT is recovered once, not twice (V_SME=0, V_OSS=5000, I=1000, Δκ=0)
+├──────────────────────────────────────────────────────────────────────
+│ I* = €5300 (expected €5300), SME advantage = €4300
+└─ ✅ PASSED: Break-even equals ΔV + Δκ; the OSS input-VAT advantage is I, not 2I
+
+┌─ TEST: S2. Equal VAT exposure and equal compliance costs: OSS optimal for every I > 0
+├──────────────────────────────────────────────────────────────────────
+└─ ✅ PASSED: C_SME - C_OSS = I, hence OSS is optimal whenever I > 0 (tie at I = 0)
+
+┌─ TEST: S3. Model output matches hand-computed cost functions for Profile C
+├──────────────────────────────────────────────────────────────────────
+│ C_SME = €9253.23, C_OSS = €17143.52, I* = €10390.29
+└─ ✅ PASSED: Costs and I* reproduce the closed-form specification
+
+┌─ TEST: S4. Pass-through: I*(p) is linear and C_SME = C_OSS at p*
+├──────────────────────────────────────────────────────────────────────
+│ p* = 0.7820, |C_SME - C_OSS| at p* = 0.00e+0
+└─ ✅ PASSED: Profile C switches to OSS at p* ≈ 78.2%; I*(1) = Δκ
+
+┌─ TEST: S5. passThrough outside [0,1] is rejected
+├──────────────────────────────────────────────────────────────────────
+└─ ✅ PASSED: RangeError for p > 1
+
+═══════════════════════════════════════════════════════════════════════════
+  TEST SUMMARY: 21 passed, 0 failed
+═══════════════════════════════════════════════════════════════════════════
+
+✅ All 21 validation tests passed (formulas, boundaries, illustrative scenarios). Tests verify implementation and economic consistency, not legal validity.
 
