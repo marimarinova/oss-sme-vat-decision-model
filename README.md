@@ -2,7 +2,9 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22485967.svg)](https://doi.org/10.5281/zenodo.22485967)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Release](https://img.shields.io/badge/release-v1.2.1-blue.svg)](https://github.com/marimarinova/oss-sme-vat-decision-model/releases/tag/v1.2.1)
+[![Release](https://img.shields.io/badge/release-v1.3.0-blue.svg)](https://github.com/marimarinova/oss-sme-vat-decision-model/releases/tag/v1.3.0)
+
+> **Correction notice (v1.3.0).** Versions up to v1.2.1 counted input VAT under OSS twice, which halved the break-even threshold. Optimal regimes for the illustrative profiles are unchanged, but thresholds and cost differences change. See [CHANGELOG](CHANGELOG.md).
 
 Decision support tool that implements a closed-form mathematical model for the binary SME-versus-OSS regime selection problem faced by EU-established micro-enterprises after the entry into force of Council Directive (EU) 2020/285 on 1 January 2025.
 
@@ -31,7 +33,7 @@ The following configurations fall outside the scope of this tool and require ind
 | Amazon Pan-EU FBA / multi-Member-State inventory storage | Each intra-EU transfer of own goods triggers an intra-community acquisition that requires local VAT registration regardless of SME status (EC Explanatory Notes, October 2024, Section 6.1) |
 | Non-EU-established sellers using EU electronic interfaces | Article 14a(2) of Directive 2006/112/EC renders the platform the deemed supplier |
 | Electronically supplied services through platform marketplaces (Etsy digital downloads, App Store, Steam, Google Play) | Article 9a of Implementing Regulation 282/2011 transfers VAT liability to the platform; CJEU confirmed in *Fenix International* (C-695/20, 28 February 2023) |
-| Micro-enterprises with EU-wide turnover below EUR 10,000 | Article 59c micro-business derogation applies; origin-Member-State VAT rate is used |
+| Micro-enterprises whose intra-Union distance sales and cross-border electronic services do not exceed EUR 10,000 | Article 59c derogation applies unless the supplier opts for destination taxation; origin-Member-State VAT rules are used |
 | Partial deductibility or exempt activities | The full-recovery assumption for OSS input VAT does not hold; the net-refund case would misstate cost |
 
 The Transfer of Own Goods (TOOG) scheme under Council Directive (EU) 2025/516 (ViDA package), effective 1 July 2028, addresses the multi-local inventory case for non-exempt taxable persons. TOOG does not extend to SME-exempt suppliers due to the input VAT deduction prerequisite (Article 369xa(1) of Directive 2006/112/EC as amended). Extension of this tool to TOOG-eligible scenarios is reserved for future development.
@@ -42,43 +44,60 @@ The model formalises the choice between the SME exemption scheme under Council D
 
 ### Cost functions
 
-Under the SME exemption, input VAT becomes a sunk cost per Article 289 of Council Directive 2006/112/EC (as amended):
+Both regimes are measured on a common base: the economic burden borne by the seller. The pass-through coefficient $p \in [0,1]$ is the share of output VAT passed on to customers; $p = 0$ (full absorption) is the default and a boundary case.
 
-$$C_{SME}(I) = V_{SME} + \kappa_{SME} + I$$
+Under the SME exemption, input VAT is paid to suppliers and cannot be deducted (Article 289 of Council Directive 2006/112/EC, as amended):
 
-Under the OSS Union scheme, input VAT is fully recovered through the applicable domestic VAT-return or VAT-refund procedure. Recovery is not performed within the OSS return itself. The resulting cost is linear:
+$$C_{SME}(I,p) = (1-p)\,V_{SME} + \kappa_{SME} + I$$
 
-$$C_{OSS}(I) = V_{OSS} - I + \kappa_{OSS}$$
+Under the OSS Union scheme, input VAT is paid to suppliers ($+I$) and fully recovered through the applicable domestic VAT-return or VAT-refund procedure ($-I$); its net economic effect is zero:
 
-A negative $C_{OSS}$ denotes a net VAT-refund position after the modeled compliance cost, and arises when input VAT exceeds destination output VAT. This requires full input-VAT deductibility; partial deductibility, exempt activities and the timing or liquidity effects of the refund procedure are outside the model scope. The recovery route depends on whether input VAT was incurred in the Member State of establishment (domestic VAT return) or in another Member State (Directive 2008/9/EC refund).
+$$C_{OSS}(I,p) = (1-p)\,V_{OSS} + \kappa_{OSS}$$
+
+The VAT cash-flow position under OSS, $V_{OSS} - I$, is reported separately (`netVATPayableOSS`, `refundPositionOSS`) and does not enter the regime-choice objective. Versions up to v1.2.1 used $C_{OSS} = V_{OSS} - I + \kappa_{OSS}$, which combined this cash-flow measure with the economic-burden measure used for SME and counted the input-VAT advantage of OSS twice; see CHANGELOG v1.3.0. Full input-VAT deductibility under OSS is assumed; partial deductibility, exempt activities and the timing or liquidity effects of the refund procedure are outside the model scope. The recovery route depends on whether input VAT was incurred in the Member State of establishment (domestic VAT return) or in another Member State (Directive 2008/9/EC refund).
 
 ### Break-even threshold
 
 Setting $C_{SME}(I) = C_{OSS}(I)$ and solving for $I$ yields the closed-form break-even threshold:
 
-$$I^{\ast} = \frac{V_{OSS} - V_{SME} + \kappa_{OSS} - \kappa_{SME}}{2}$$
+$$I^{\ast}(p) = (1-p)\,(V_{OSS} - V_{SME}) + (\kappa_{OSS} - \kappa_{SME})$$
 
-The factor of 2 reflects the asymmetric incidence of input VAT under the two regimes: $I$ is a sunk cost under SME and a recoverable credit under OSS. The signed cost difference is linear:
+The signed cost difference is linear with unit slope in $I$:
 
-$$C_{SME}(I) - C_{OSS}(I) = 2(I - I^{\ast})$$
+$$C_{SME}(I,p) - C_{OSS}(I,p) = I - I^{\ast}(p)$$
 
-Since $V_{OSS} > V_{SME}$ and $\kappa_{OSS} > \kappa_{SME}$, the numerator is positive and $I^{\ast}$ is well defined for non-negative input VAT.
+Since $V_{OSS} \geq V_{SME}$ and $\kappa_{OSS} > \kappa_{SME}$, $I^{\ast}(p) > 0$ for every $p \in [0,1]$, with $I^{\ast}(1) = \kappa_{OSS} - \kappa_{SME}$. For a given $I$, the pass-through switch point is
+
+$$p^{\ast} = 1 - \frac{I - (\kappa_{OSS} - \kappa_{SME})}{V_{OSS} - V_{SME}}$$
+
+Sanity check: with $V_{SME} = 0$, $V_{OSS} = 5000$, $I = 1000$ and equal compliance costs, SME saves $5000 - 1000 = 4000$, so $I^{\ast} = 5000$ (validation test S1).
 
 ### Decision rule
 
-$$R^{\ast} = \text{SME} \quad \text{when} \quad I < I^{\ast}$$
+$$R^{\ast} = \text{SME} \quad \text{when} \quad I < I^{\ast}(p)$$
 
-$$R^{\ast} = \text{OSS} \quad \text{when} \quad I \geq I^{\ast}$$
+$$R^{\ast} = \text{OSS} \quad \text{when} \quad I \geq I^{\ast}(p)$$
 
 ### Feasibility constraint
 
-The SME exemption is available only when Union-wide turnover $T$ does not exceed $\theta = $ EUR 100,000, and when turnover in each Member State where the exemption is sought remains below that State's national threshold. Above the Union threshold the SME-OSS comparison no longer applies and OSS is the regime modelled for the covered supplies.
+The SME exemption is available only when Union-wide turnover $T$ does not exceed $\theta = $ EUR 100,000, and when turnover in each Member State where the exemption is sought remains below that State's national threshold. Above the Union threshold the cross-border exemption is unavailable and the covered supplies are taxed in the Member States of consumption; the OSS is an optional simplification for declaring that VAT (Article 369b), and it is the declaration route modelled here.
 
 ### Auxiliary growth model
 
 For an enterprise with initial turnover $T_0$ and constant annual growth rate $g$, the time to cross the Union threshold is:
 
 $$t^{\ast} = \frac{\log(\theta / T_0)}{\log(1 + g)}$$
+
+## Project Status and Roadmap
+
+v1.3.0 implements the corrected binary model. Work in progress for the next release extends it to a jurisdiction-level model:
+
+- the decision is exemption or taxation in each Member State of consumption, together with the registration status in the Member State of establishment;
+- two registration families: without a domestic deduction right (no registration, or OSS-only registration) and with full domestic registration, where mixed-use input VAT is deducted pro rata;
+- establishment-state deduction rules as parameters, with Bulgaria as the first verified configuration;
+- analytical results on when the country-by-country decision separates and when exemptions become complements through the deduction pro rata.
+
+These extensions are not yet part of the released code.
 
 ## Repository Structure
 
@@ -93,7 +112,7 @@ oss-sme-vat-decision-model/
 ├── data/
 │   └── eu-vat-rates-2025.json      # VAT rates and SME implementation status, 27 Member States
 └── tests/
-    └── validation.test.js          # 16-test validation suite
+    └── validation.test.js          # 21-test validation suite
 ```
 
 ## Installation
@@ -112,7 +131,8 @@ const { calculateRegimeCosts, calculateBreakeven } = require('./src/model.js');
 const result = calculateRegimeCosts(
   { DE: 8500, FR: 4200, IT: 3100 },  // turnover by Member State
   'BG',                               // Member State of establishment
-  350                                 // annual input VAT in EUR
+  350,                                // annual input VAT in EUR
+  0                                   // optional pass-through p in [0,1], default 0
 );
 const be = calculateBreakeven(result.vatSME, result.vatOSS);
 
@@ -121,7 +141,7 @@ console.log(result.vatSME, result.vatOSS, result.optimalRegime, be.breakeven);
 
 ## Validation
 
-The repository includes a 16-test validation suite covering edge cases, parametric sensitivity, four illustrative micro-enterprise scenarios, a net-refund case, and reproducibility of the closed-form break-even formula. All 16 validation tests pass at numerical tolerance $\varepsilon \leq$ EUR 1. The tests verify the implemented formulas, boundary conditions and illustrative scenarios; they do not establish legal advice or empirical representativeness.
+The repository includes a 21-test validation suite covering edge cases, parametric sensitivity, four illustrative micro-enterprise scenarios, the separation of the OSS refund position from economic cost, and five economic-consistency tests (S1 to S5) whose expected values are computed by hand, independently of the implemented break-even function, so that a mis-specified cost function is detected and not only a mis-implemented one. All 21 validation tests pass at numerical tolerance $\varepsilon \leq$ EUR 1. The tests verify the implemented formulas, boundary conditions and illustrative scenarios; they do not establish legal advice or empirical representativeness.
 
 ```bash
 npm test
@@ -133,12 +153,12 @@ Values are computed from unrounded inputs; displayed rounded to the nearest euro
 
 | Profile | T | I | $V_{SME}$ | $V_{OSS}$ | $C_{SME}$ | $C_{OSS}$ | $I^{\ast}$ | $R^{\ast}$ | $\Delta C$ |
 |---|---:|---:|---:|---:|---:|---:|---:|---|---:|
-| A. Low-I, single-category digital | 25,300 | 350 | 417 | 4,287 | 967 | 4,437 | 2,085 | SME | 3,471 |
-| B. High-I, physical goods | 50,000 | 9,500 | 0 | 8,379 | 9,700 | -621 | 4,339 | OSS | 10,321 |
-| C. Mid-I, digital services near $\theta$ | 98,000 | 2,500 | 6,553 | 16,644 | 9,253 | 14,644 | 5,195 | SME | 5,390 |
-| D. Mid-I, diversified geographic | 80,000 | 3,000 | 12,129 | 13,932 | 15,329 | 11,432 | 1,052 | OSS | 3,897 |
+| A. Low-I, single-category digital | 25,300 | 350 | 417 | 4,287 | 967 | 4,787 | 4,171 | SME | 3,821 |
+| B. High-I, physical goods | 50,000 | 9,500 | 0 | 8,379 | 9,700 | 8,879 | 8,679 | OSS | 821 |
+| C. Mid-I, digital services near $\theta$ | 98,000 | 2,500 | 6,553 | 16,644 | 9,253 | 17,144 | 10,390 | SME | 7,890 |
+| D. Mid-I, diversified geographic | 80,000 | 3,000 | 12,129 | 13,932 | 15,329 | 14,432 | 2,103 | OSS | 897 |
 
-For Profile B, input VAT exceeds destination output VAT, so $C_{OSS}$ is negative (net-refund position).
+Values at $p = 0$ (v1.3.0). Optimal regimes are unchanged relative to v1.2.1; cost differences change because v1.2.1 double-counted input VAT under OSS. Profile B has a VAT refund position of EUR 1,121 under OSS in cash-flow terms, which is not an economic cost saving. Pass-through switch points: Profile A at $p^{\ast} \approx 0.987$, Profile C at $p^{\ast} \approx 0.782$; Profiles B and D remain OSS for every $p \in [0,1]$.
 
 ## Citation
 
@@ -146,14 +166,14 @@ For Profile B, input VAT exceeds destination output VAT, so $C_{OSS}$ is negativ
 @software{marinova2026code,
   author    = {Marinova, Marieta},
   title     = {{OSS-SME VAT Decision Model}},
-  version   = {v1.2.1},
+  version   = {v1.3.0},
   year      = {2026},
   doi       = {10.5281/zenodo.22485967},
   url       = {https://github.com/marimarinova/oss-sme-vat-decision-model}
 }
 ```
 
-Cite the version DOI of v1.2.1 in the manuscript; the concept DOI above resolves to the latest version.
+Cite the version DOI of v1.3.0 (shown on its Zenodo record) in publications; the concept DOI above resolves to the latest version. Versions v1.2.1 and earlier contain the specification error corrected in v1.3.0 and should not be used for results.
 
 ## Legal References
 
