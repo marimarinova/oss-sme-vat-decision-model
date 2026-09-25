@@ -6,7 +6,7 @@
  * 
  * @author Marieta Marinova
  * @institution Sofia University "St. Kliment Ohridski"
- * @version 1.2.1
+ * @version 1.3.0
  * @license MIT
  * 
  * Legal Framework:
@@ -122,16 +122,26 @@ function checkSMEEligibility(turnover, msData, totalTurnover) {
 /**
  * Calculate total costs under SME and OSS regimes
  * 
- * Cost Functions:
- *   C_SME = V_SME + κ_SME + I  (input VAT lost - cannot deduct per Art. 289)
- *   C_OSS = V_OSS - I + κ_OSS  (input VAT fully recovered; may be negative = net refund)
+ * Economic cost functions (common measurement base: the seller's economic burden):
+ *   C_SME = (1 - p)·V_SME + κ_SME + I   (input VAT paid and not recoverable, Art. 289)
+ *   C_OSS = (1 - p)·V_OSS + κ_OSS       (input VAT paid, +I, and recovered, -I: net zero)
+ *
+ * v1.3.0 correction: v1.2.x used C_OSS = V_OSS - I + κ_OSS, which mixed a net-remittance
+ * measure (OSS) with an economic-burden measure (SME) and counted the input-VAT
+ * advantage of OSS twice (2I instead of I). The VAT cash-flow position is now
+ * reported separately (netVATPayableOSS, refundPositionOSS) and does not enter
+ * the regime-choice objective.
  * 
  * @param {object} turnoverByMS - Object with MS codes as keys and turnover as values
  * @param {string} msEstablishment - MS code where business is established
  * @param {number} inputVAT - Annual input VAT from business expenses
+ * @param {number} [passThrough=0] - Share p ∈ [0,1] of output VAT passed on to customers
  * @returns {object} Calculation results including costs, VAT amounts, and recommendation
  */
-function calculateRegimeCosts(turnoverByMS, msEstablishment, inputVAT) {
+function calculateRegimeCosts(turnoverByMS, msEstablishment, inputVAT, passThrough = 0) {
+  if (passThrough < 0 || passThrough > 1) {
+    throw new RangeError('passThrough must lie in [0, 1]');
+  }
   // Calculate total and cross-border turnover
   const totalTurnover = Object.values(turnoverByMS).reduce((sum, t) => sum + (t || 0), 0);
   const domesticTurnover = turnoverByMS[msEstablishment] || 0;
@@ -176,13 +186,16 @@ function calculateRegimeCosts(turnoverByMS, msEstablishment, inputVAT) {
     });
   });
   
-  // Calculate total costs
-  // C_SME = V_SME + κ_SME + I (input VAT is lost under SME)
-  const costSME = vatSME + COMPLIANCE_COSTS.SME + inputVAT;
-  
-  // C_OSS = V_OSS - I + κ_OSS (input VAT fully recovered via domestic VAT-return/refund;
-  // may be negative, denoting a net VAT-refund position after the modeled compliance cost)
-  const costOSS = vatOSS - inputVAT + COMPLIANCE_COSTS.OSS;
+  // Economic cost functions on a common base
+  const burden = 1 - passThrough;
+  // C_SME = (1-p)·V_SME + κ_SME + I  (input VAT is a sunk, non-recoverable cost)
+  const costSME = burden * vatSME + COMPLIANCE_COSTS.SME + inputVAT;
+  // C_OSS = (1-p)·V_OSS + κ_OSS  (input VAT paid and fully recovered: net zero)
+  const costOSS = burden * vatOSS + COMPLIANCE_COSTS.OSS;
+
+  // VAT cash-flow position under OSS (reporting only, NOT part of the objective)
+  const netVATPayableOSS = vatOSS - inputVAT;
+  const refundPositionOSS = Math.max(0, inputVAT - vatOSS);
   
   // Determine eligibility
   const smeEligible = totalTurnover <= UNION_THRESHOLD;
@@ -205,6 +218,11 @@ function calculateRegimeCosts(turnoverByMS, msEstablishment, inputVAT) {
     // Total costs
     costSME,
     costOSS,
+    passThrough,
+
+    // VAT cash-flow position under OSS (not an economic cost)
+    netVATPayableOSS,
+    refundPositionOSS,
     
     // Eligibility flags
     smeEligible,
@@ -225,20 +243,22 @@ function calculateRegimeCosts(turnoverByMS, msEstablishment, inputVAT) {
  * Break-even Theorem:
  * Find I* where C_SME(I*) = C_OSS(I*)
  * 
- * Derivation (Case 1: V_OSS - I ≥ 0):
- *   V_SME + κ_SME + I = V_OSS - I + κ_OSS
- *   2I = V_OSS - V_SME + κ_OSS - κ_SME
- *   I* = (V_OSS - V_SME + κ_OSS - κ_SME) / 2
+ * Derivation:
+ *   (1-p)V_SME + κ_SME + I = (1-p)V_OSS + κ_OSS
+ *   I* = (1-p)(V_OSS - V_SME) + (κ_OSS - κ_SME)
+ * Decision rule: SME optimal iff I < I*, OSS optimal iff I > I*.
+ * (v1.2.x divided by 2 as a consequence of the double-counting error.)
  * 
  * @param {number} vatSME - VAT collected under SME regime
  * @param {number} vatOSS - VAT collected under OSS regime
+ * @param {number} [passThrough=0] - Share p ∈ [0,1] of output VAT passed on
  * @returns {object} Break-even analysis results
  */
-function calculateBreakeven(vatSME, vatOSS) {
+function calculateBreakeven(vatSME, vatOSS, passThrough = 0) {
   const kappaDiff = COMPLIANCE_COSTS.OSS - COMPLIANCE_COSTS.SME;
   
-  // I* = (V_OSS - V_SME + κ_OSS - κ_SME) / 2
-  const breakeven = (vatOSS - vatSME + kappaDiff) / 2;
+  // I* = (1-p)(V_OSS - V_SME) + (κ_OSS - κ_SME)
+  const breakeven = (1 - passThrough) * (vatOSS - vatSME) + kappaDiff;
   
   return {
     // Closed-form threshold, unclipped (may be negative for some parameter sets)
@@ -247,11 +267,9 @@ function calculateBreakeven(vatSME, vatOSS) {
     breakevenDisplay: Math.max(0, breakeven),
     
     // Interpretation
-    interpretation: breakeven < 0 
-      ? 'SME is always optimal (negative break-even)'
-      : breakeven > vatOSS 
-        ? 'OSS is always optimal (unreachable break-even)'
-        : `At I = €${Math.round(breakeven)}, both regimes equal`,
+    interpretation: breakeven <= 0
+      ? 'OSS is optimal for every non-negative input VAT (non-positive break-even)'
+      : `At I = €${Math.round(breakeven)}, both regimes equal`,
     
     // Decision rule
     decisionRule: {
@@ -259,6 +277,18 @@ function calculateBreakeven(vatSME, vatOSS) {
       ossOptimalWhen: `Input VAT ≥ €${Math.round(Math.max(0, breakeven))}`
     }
   };
+}
+
+/**
+ * Pass-through switch point p* for a given input VAT
+ * Solves C_SME(p) = C_OSS(p):  p* = 1 - (I - Δκ) / (V_OSS - V_SME)
+ * Returns null when ΔV = 0 (p has no effect on the choice).
+ */
+function calculateSwitchPoint(vatSME, vatOSS, inputVAT) {
+  const deltaV = vatOSS - vatSME;
+  if (deltaV === 0) return null;
+  const kappaDiff = COMPLIANCE_COSTS.OSS - COMPLIANCE_COSTS.SME;
+  return 1 - (inputVAT - kappaDiff) / deltaV;
 }
 
 /**
@@ -319,6 +349,7 @@ module.exports = {
   checkSMEEligibility,
   calculateRegimeCosts,
   calculateBreakeven,
+  calculateSwitchPoint,
   forecastGrowth
 };
 
