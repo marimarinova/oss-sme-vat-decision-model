@@ -107,8 +107,7 @@ oss-sme-vat-decision-model/
 ├── CHANGELOG.md                    # version history
 ├── LICENSE                         # MIT
 ├── src/
-│   ├── model.js                    # calculator logic
-│   └── calculator.jsx              # React UI component
+│   └── model.js                    # calculator logic
 ├── data/
 │   └── eu-vat-rates-2025.json      # VAT rates and SME implementation status, 27 Member States
 └── tests/
