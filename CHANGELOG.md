@@ -1,5 +1,37 @@
 # Changelog
 
+## v1.3.0 — 2026-09-20
+
+### Model (correction)
+- Corrected the OSS economic cost function from `V_OSS - I + kappa_OSS` to
+  `V_OSS + kappa_OSS`. Under full deductibility, input VAT is paid (+I) and
+  recovered (-I) under OSS, so its net economic effect is zero. The v1.2.x form
+  combined a net-remittance measure (OSS) with an economic-burden measure (SME)
+  and counted the input-VAT advantage of OSS twice (2I instead of I).
+- Corrected the break-even threshold from `(dV + dKappa) / 2` to `dV + dKappa`.
+- Corrected the break-even interpretation strings, which in v1.2.x stated the
+  opposite regime for non-positive and very high thresholds.
+- Added optional pass-through coefficient p in [0,1] to `calculateRegimeCosts`
+  and `calculateBreakeven`, and `calculateSwitchPoint` for p*.
+- The OSS VAT cash-flow position is now reported separately
+  (`netVATPayableOSS`, `refundPositionOSS`) and is not part of the objective.
+
+### Results
+- Optimal regimes for Profiles A-D are unchanged.
+- Cost differences: A 3,471 -> 3,821; B 10,321 -> 821; C 5,390 -> 7,890;
+  D 3,897 -> 897 (EUR, p = 0).
+- Break-even thresholds double: A 4,171; B 8,679; C 10,390; D 2,103.
+- Profile C pass-through switch point: 0.534 -> 0.782. With p in {0, 0.3, 0.7}
+  no profile changes regime.
+
+### Validation
+- Replaced test 10b (which asserted the erroneous negative C_OSS) with a test
+  separating the refund position from economic cost.
+- Added tests S1-S5 with hand-computed expectations. Run against v1.2.1, S1, S3
+  and S4 fail, confirming that the new tests detect the specification error.
+  15 of the 16 v1.2.1 tests pass under both versions and could not detect it.
+- Suite size: 21 tests, 21 passed.
+
 ## v1.2.1 — 2026-09-04
 
 ### Data
