@@ -6,6 +6,7 @@
  * This test suite validates the mathematical model with:
  * - 10 simulated test cases (edge cases, boundary conditions)
  * - 5 illustrative e-commerce scenarios
+ * - 5 economic-consistency tests with hand-computed expectations (v1.3.0)
  * 
  * Run: node tests/validation.test.js
  */
@@ -17,6 +18,7 @@ const {
   checkSMEEligibility,
   calculateRegimeCosts,
   calculateBreakeven,
+  calculateSwitchPoint,
   forecastGrowth,
   EU_MEMBER_STATES,
   UNION_THRESHOLD
@@ -218,21 +220,23 @@ test('10. Hungary Highest VAT Rate (27%)', () => {
   };
 });
 
-test('10b. Net-refund case (I > V_OSS): replaces former input-heavy branch test', () => {
-  // Profile B configuration: high input VAT exceeds destination output VAT
+test('10b. Cash-flow refund position is separate from economic cost (I > V_OSS)', () => {
+  // Profile B configuration: input VAT exceeds destination output VAT
   const turnover = { DE: 18000, FR: 12000, IT: 8000, NL: 5000, BE: 4000, AT: 3000 };
   const inputVAT = 9500;
   const result = calculateRegimeCosts(turnover, 'BG', inputVAT);
 
   console.log(`│ V_OSS = €${result.vatOSS.toFixed(2)}, I = €${inputVAT}`);
-  console.log(`│ C_OSS = €${result.costOSS.toFixed(2)} (linear form, no max operator)`);
+  console.log(`│ Refund position = €${result.refundPositionOSS.toFixed(2)}, C_OSS = €${result.costOSS.toFixed(2)}`);
 
-  // Under the linear model C_OSS = V_OSS - I + kappa_OSS may be below kappa_OSS (net refund)
-  const netRefund = inputVAT > result.vatOSS;
-  const belowKappa = result.costOSS < 500;
+  // A refund claim exists in cash-flow terms, but the economic cost of OSS
+  // does not depend on I and equals V_OSS + kappa_OSS
+  const refundOK = assertApprox(result.refundPositionOSS, inputVAT - result.vatOSS);
+  const costOK = assertApprox(result.costOSS, result.vatOSS + 500);
+  const independentOfI = assertApprox(calculateRegimeCosts(turnover, 'BG', 0).costOSS, result.costOSS);
   return {
-    success: netRefund && belowKappa && result.optimalRegime === 'OSS',
-    message: `I > V_OSS -> C_OSS = €${result.costOSS.toFixed(2)} < kappa_OSS, net-refund position, OSS optimal`
+    success: refundOK && costOK && independentOfI && result.costOSS >= 0,
+    message: `Refund €${result.refundPositionOSS.toFixed(0)} reported separately; C_OSS independent of I and non-negative`
   };
 });
 
@@ -332,6 +336,77 @@ test('Scenario E: Sensitivity Analysis at Break-even', () => {
   };
 });
 
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TEST GROUP 3: ECONOMIC CONSISTENCY (v1.3.0)
+// Expected values are computed by hand, independently of calculateBreakeven,
+// so that the tests can detect a wrong specification and not only a wrong implementation.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+console.log('\n' + '═'.repeat(75));
+console.log('  ECONOMIC CONSISTENCY TESTS (hand-computed expectations)');
+console.log('═'.repeat(75));
+
+test('S1. Input VAT is recovered once, not twice (V_SME=0, V_OSS=5000, I=1000, Δκ=0)', () => {
+  // Hand computation: π_SME - π_OSS = 5000 - 1000 = 4000; threshold I* = 5000
+  const I = 1000, VSME = 0, VOSS = 5000;
+  const bk = calculateBreakeven(VSME, VOSS);
+  const kappaDiff = 500 - 200;
+  const expectedIstar = (VOSS - VSME) + kappaDiff;       // 5300, no division by 2
+  const expectedAdvantageSME = expectedIstar - I;         // 4300
+  const costSME = VSME + 200 + I;
+  const costOSS = VOSS + 500;
+  console.log(`│ I* = €${bk.breakeven} (expected €${expectedIstar}), SME advantage = €${costOSS - costSME}`);
+  return {
+    success: assertApprox(bk.breakeven, expectedIstar) && assertApprox(costOSS - costSME, expectedAdvantageSME),
+    message: 'Break-even equals ΔV + Δκ; the OSS input-VAT advantage is I, not 2I'
+  };
+});
+
+test('S2. Equal VAT exposure and equal compliance costs: OSS optimal for every I > 0', () => {
+  // If V_SME = V_OSS and κ_SME = κ_OSS, then C_SME - C_OSS = I > 0
+  const I = 1234, V = 3000, k = 400;
+  const costSME = V + k + I, costOSS = V + k;
+  return {
+    success: costSME - costOSS === I && costOSS < costSME,
+    message: 'C_SME - C_OSS = I, hence OSS is optimal whenever I > 0 (tie at I = 0)'
+  };
+});
+
+test('S3. Model output matches hand-computed cost functions for Profile C', () => {
+  const turnover = { DE: 28000, FR: 22000, IT: 18000, ES: 12000, NL: 8000, BE: 6000, PL: 4000 };
+  const I = 2500;
+  const r = calculateRegimeCosts(turnover, 'BG', I);
+  const okSME = assertApprox(r.costSME, r.vatSME + 200 + I);
+  const okOSS = assertApprox(r.costOSS, r.vatOSS + 500);
+  const bk = calculateBreakeven(r.vatSME, r.vatOSS);
+  const okBk = assertApprox(bk.breakeven, r.vatOSS - r.vatSME + 300);
+  console.log(`│ C_SME = €${r.costSME.toFixed(2)}, C_OSS = €${r.costOSS.toFixed(2)}, I* = €${bk.breakeven.toFixed(2)}`);
+  return { success: okSME && okOSS && okBk, message: 'Costs and I* reproduce the closed-form specification' };
+});
+
+test('S4. Pass-through: I*(p) is linear and C_SME = C_OSS at p*', () => {
+  const turnover = { DE: 28000, FR: 22000, IT: 18000, ES: 12000, NL: 8000, BE: 6000, PL: 4000 };
+  const I = 2500;
+  const r0 = calculateRegimeCosts(turnover, 'BG', I);
+  const pStar = calculateSwitchPoint(r0.vatSME, r0.vatOSS, I);
+  const atStar = calculateRegimeCosts(turnover, 'BG', I, pStar);
+  const b0 = calculateBreakeven(r0.vatSME, r0.vatOSS, 0).breakeven;
+  const b1 = calculateBreakeven(r0.vatSME, r0.vatOSS, 1).breakeven;
+  const bh = calculateBreakeven(r0.vatSME, r0.vatOSS, 0.5).breakeven;
+  console.log(`│ p* = ${pStar.toFixed(4)}, |C_SME - C_OSS| at p* = ${Math.abs(atStar.costSME - atStar.costOSS).toExponential(2)}`);
+  return {
+    success: assertApprox(atStar.costSME, atStar.costOSS) && assertApprox(bh, (b0 + b1) / 2) && assertApprox(b1, 300),
+    message: `Profile C switches to OSS at p* ≈ ${(pStar * 100).toFixed(1)}%; I*(1) = Δκ`
+  };
+});
+
+test('S5. passThrough outside [0,1] is rejected', () => {
+  let threw = false;
+  try { calculateRegimeCosts({ DE: 10000 }, 'BG', 0, 1.2); } catch (e) { threw = e instanceof RangeError; }
+  return { success: threw, message: 'RangeError for p > 1' };
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // SUMMARY
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -341,7 +416,7 @@ console.log(`  TEST SUMMARY: ${passed} passed, ${failed} failed`);
 console.log('═'.repeat(75));
 
 if (failed === 0) {
-  console.log('\n✅ All 16 validation tests passed (formulas, boundaries, illustrative scenarios). Tests verify implementation, not legal validity.\n');
+  console.log(`\n✅ All ${passed} validation tests passed (formulas, boundaries, illustrative scenarios). Tests verify implementation and economic consistency, not legal validity.\n`);
   process.exit(0);
 } else {
   console.log(`\n⚠️ ${failed} test(s) need attention\n`);
